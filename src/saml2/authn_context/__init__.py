@@ -1,5 +1,4 @@
-from saml2.saml import AuthnContext
-from saml2.saml import AuthnContextClassRef
+from saml2.saml import AuthnContext, AuthnContextClassRef
 from saml2.samlp import RequestedAuthnContext
 
 __author__ = 'rolandh'
@@ -137,7 +136,7 @@ class AuthnBroker(object):
                 res = []
 
             for ref in _refs[1:]:
-                item = self.db[ref]
+                item = self.db["info"][ref]
                 res.append((item["method"], ref))
                 if func(_level, item["level"]):
                     _level = item["level"]

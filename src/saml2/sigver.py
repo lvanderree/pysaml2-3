@@ -32,6 +32,10 @@ from Crypto.PublicKey.RSA import importKey
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.Util.asn1 import DerSequence
 from Crypto.PublicKey import RSA
+from saml2.cert import OpenSSLWrapper
+from saml2.extension import pefim
+from saml2.saml import EncryptedAssertion
+from saml2.samlp import Response, response_from_string
 
 import xmldsig as ds
 
@@ -41,7 +45,6 @@ from saml2 import saml
 from saml2 import ExtensionElement
 from saml2 import VERSION
 
-from saml2.cert import OpenSSLWrapper
 from saml2.s_utils import sid
 from saml2.s_utils import Unsupported
 
@@ -50,21 +53,17 @@ from saml2.time_util import utc_now
 from saml2.time_util import str_to_time
 
 from tempfile import NamedTemporaryFile
-from subprocess import Popen
-from subprocess import PIPE
+from subprocess import Popen, PIPE
+from xmlenc import EncryptionMethod
+from xmlenc import EncryptedKey
+from xmlenc import CipherData
+from xmlenc import CipherValue
+from xmlenc import EncryptedData
+
 from Crypto.Hash import SHA256
 from Crypto.Hash import SHA384
 from Crypto.Hash import SHA512
 from Crypto.Hash import SHA
-from xmlenc import EncryptionMethod
-from xmlenc import EncryptedData
-from xmlenc import EncryptedKey
-from xmlenc import CipherData
-from xmlenc import CipherValue
-
-from saml2.extension import pefim
-from saml2.saml import EncryptedAssertion
-from saml2.samlp import Response, response_from_string
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +73,8 @@ RSA_SHA1 = "http://www.w3.org/2000/09/xmldsig#rsa-sha1"
 RSA_1_5 = "http://www.w3.org/2001/04/xmlenc#rsa-1_5"
 TRIPLE_DES_CBC = "http://www.w3.org/2001/04/xmlenc#tripledes-cbc"
 
-XMLTAG = "<?xml version=\"1.0\"?>"
-PREFIX = '<?xml version="1.0" encoding="UTF-8"?>'
+XMLTAG = "<?xml version='1.0'?>"
+PREFIX = "<?xml version='1.0' encoding='UTF-8'?>"
 
 
 class SigverError(SAMLError):
@@ -624,7 +623,7 @@ def verify_redirect_signature(info, cert):
             args = info.copy()
             del args["Signature"]  # everything but the signature
             string = "&".join(
-                [urllib.parse.urlencode({k: args[k][0]}) for k in _order])
+                [urllib.urlencode({k: args[k][0]}) for k in _order])
             _key = extract_rsa_key_from_x509_cert(pem_format(cert))
             _sign = base64.b64decode(info["Signature"][0])
             try:
@@ -858,15 +857,15 @@ class CryptoBackendXmlSec1(CryptoBackend):
 
         if self.__DEBUG:
             try:
-                print((" ".join(com_list)))
+                print(" ".join(com_list))
             except TypeError:
-                print(("cert_type", cert_type))
-                print(("cert_file", cert_file))
-                print(("node_name", node_name))
-                print(("fil", fil))
+                print("cert_type", cert_type)
+                print("cert_file", cert_file)
+                print("node_name", node_name)
+                print("fil", fil)
                 raise
-            print(("%s: %s" % (cert_file, os.access(cert_file, os.F_OK))))
-            print(("%s: %s" % (fil, os.access(fil, os.F_OK))))
+            print("%s: %s" % (cert_file, os.access(cert_file, os.F_OK)))
+            print("%s: %s" % (fil, os.access(fil, os.F_OK)))
 
         (_stdout, stderr, _output) = self._run_xmlsec(com_list, [fil],
                                                       exception=SignatureError)
@@ -1023,8 +1022,8 @@ def security_context(conf, debug=None):
 def encrypt_cert_from_item(item):
     _encrypt_cert = None
     try:
-        _elem = extension_elements_to_elements(
-            item.extension_elements[0].children, [pefim, ds])
+        _elem = extension_elements_to_elements(item.extension_elements[0].children,
+                                               [pefim, ds])
         if len(_elem) == 1:
             _encrypt_cert = _elem[0].x509_data[0].x509_certificate.text
         else:
@@ -1156,10 +1155,10 @@ class CertHandler(object):
                 self._security_context.cert_file,
                 self._security_context.cert_type)
 
+
 # How to get a rsa pub key fingerprint from a certificate
 # openssl x509 -inform pem -noout -in server.crt -pubkey > publickey.pem
 # openssl rsa -inform pem -noout -in publickey.pem -pubin -modulus
-
 class SecurityContext(object):
     my_cert = None
 
@@ -1180,6 +1179,7 @@ class SecurityContext(object):
         # Your public key
         self.cert_file = cert_file
         self.cert_type = cert_type
+
         self.my_cert = read_cert_from_file(cert_file, cert_type)
 
         self.cert_handler = CertHandler(self, cert_file, cert_type, key_file,
@@ -1499,8 +1499,7 @@ class SecurityContext(object):
         return self.correctly_signed_message(decoded_xml, "assertion", must,
                                              origdoc, only_valid_cert)
 
-    def correctly_signed_response(self, decoded_xml, must=False, origdoc=None,
-                                  only_valid_cert=False,
+    def correctly_signed_response(self, decoded_xml, must=False, origdoc=None,only_valid_cert=False,
                                   require_response_signature=False, **kwargs):
         """ Check if a instance is correctly signed, if we have metadata for
         the IdP that sent the info use that, if not use the key that are in
@@ -1679,28 +1678,6 @@ def pre_signature_part(ident, public_key=None, identifier=None):
         signature.key_info = key_info
 
     return signature
-
-#    <EncryptedData 
-#   xmlns="http://www.w3.org/2001/04/xmlenc#" 
-#   Type="http://www.w3.org/2001/04/xmlenc#Element">
-#  <EncryptionMethod Algorithm=
-#    "http://www.w3.org/2001/04/xmlenc#tripledes-cbc"/>
-#  <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
-#   <EncryptedKey xmlns="http://www.w3.org/2001/04/xmlenc#">
-#    <EncryptionMethod Algorithm=
-#      "http://www.w3.org/2001/04/xmlenc#rsa-1_5"/>
-#    <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
-#     <KeyName/>
-#    </KeyInfo>
-#    <CipherData>
-#     <CipherValue/>
-#    </CipherData>
-#   </EncryptedKey>
-#  </KeyInfo>
-#  <CipherData>
-#   <CipherValue/>
-#  </CipherData>
-# </EncryptedData>
 
 
 # <?xml version="1.0" encoding="UTF-8"?>

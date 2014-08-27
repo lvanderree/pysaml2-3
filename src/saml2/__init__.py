@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """Contains base classes representing SAML elements.

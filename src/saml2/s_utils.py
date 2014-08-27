@@ -290,7 +290,7 @@ def do_ava(val, typ=""):
         ava = saml.AttributeValue()
         if typ:
             ava.set_type(typ)
-        ava.set_text(val)        
+        ava.set_text(val)
         attrval = [ava]
     elif val is None:
         attrval = []
@@ -427,7 +427,7 @@ def dynamic_importer(name, class_name=None):
     try:
         fp, pathname, description = imp.find_module(name)
     except ImportError:
-        print(("unable to locate module: " + name))
+        print("unable to locate module: " + name)
         return None, None
 
     try:

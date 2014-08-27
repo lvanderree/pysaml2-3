@@ -204,7 +204,7 @@ def _dummy(_):
 def for_me(conditions, myself):
     """ Am I among the intended audiences """
 
-    if not conditions.audience_restriction:  # No audience restriction
+    if not conditions.audience_restriction: # No audience restriction
         return True
 
     for restriction in conditions.audience_restriction:
@@ -216,20 +216,19 @@ def for_me(conditions, myself):
             else:
                 #print "Not for me: %s != %s" % (audience.text.strip(), myself)
                 pass
-
+    
     return False
 
 
 def authn_response(conf, return_addrs, outstanding_queries=None, timeslack=0,
-                   asynchop=True, allow_unsolicited=False,
-                   want_assertions_signed=False):
+                   asynchop=True, allow_unsolicited=False, want_assertions_signed=False):
     sec = security_context(conf)
     if not timeslack:
         try:
             timeslack = int(conf.accepted_time_diff)
         except TypeError:
             timeslack = 0
-
+    
     return AuthnResponse(sec, conf.attribute_converters, conf.entityid,
                          return_addrs, outstanding_queries, timeslack,
                          asynchop=asynchop, allow_unsolicited=allow_unsolicited,
@@ -272,13 +271,13 @@ class StatusResponse(object):
         self.require_response_signature = False
         self.not_signed = False
         self.asynchop = asynchop
-
+    
     def _clear(self):
         self.xmlstr = ""
         self.name_id = None
         self.response = None
         self.not_on_or_after = 0
-
+        
     def _postamble(self):
         if not self.response:
             logger.error("Response was not correctly signed")
@@ -294,10 +293,10 @@ class StatusResponse(object):
             logger.error("Not valid response: %s" % exc.args[0])
             self._clear()
             return self
-
+        
         self.in_response_to = self.response.in_response_to
         return self
-
+        
     def load_instance(self, instance):
         if signed(instance):
             # This will check signature on Assertion which is the default
@@ -310,9 +309,9 @@ class StatusResponse(object):
         else:
             self.not_signed = True
             self.response = instance
-
+            
         return self._postamble()
-
+        
     def _loads(self, xmldata, decode=True, origxml=None):
 
         # own copy
@@ -320,8 +319,7 @@ class StatusResponse(object):
         logger.debug("xmlstr: %s" % (self.xmlstr,))
 
         try:
-            self.response = self.signature_check(xmldata, origdoc=origxml,
-                                                 must=self.require_signature,
+            self.response = self.signature_check(xmldata, origdoc=origxml, must=self.require_signature,
                                                  require_response_signature=self.require_response_signature)
 
         except TypeError:
@@ -331,11 +329,11 @@ class StatusResponse(object):
         except Exception as excp:
             #logger.exception("EXCEPTION: %s", excp)
             raise
-
+    
         #print "<", self.response
-
+        
         return self._postamble()
-
+    
     def status_ok(self):
         if self.response.status:
             status = self.response.status
@@ -371,7 +369,7 @@ class StatusResponse(object):
 
     def _verify(self):
         if self.request_id and self.in_response_to and \
-                        self.in_response_to != self.request_id:
+                self.in_response_to != self.request_id:
             logger.error("Not the id I expected: %s != %s" % (
                 self.in_response_to, self.request_id))
             return None
@@ -387,11 +385,11 @@ class StatusResponse(object):
 
         if self.asynchop:
             if self.response.destination and \
-                            self.response.destination not in self.return_addrs:
+                    self.response.destination not in self.return_addrs:
                 logger.error("%s not in %s" % (self.response.destination,
-                                               self.return_addrs))
+                                           self.return_addrs))
                 return None
-
+            
         assert self.issue_instant_ok()
         assert self.status_ok()
         return self
@@ -410,10 +408,10 @@ class StatusResponse(object):
         self.xmlstr = mold.xmlstr
         self.in_response_to = mold.in_response_to
         self.response = mold.response
-
+        
     def issuer(self):
         return self.response.issuer.text.strip()
-
+        
 
 class LogoutResponse(StatusResponse):
     msgtype = "logout_response"
@@ -432,8 +430,7 @@ class NameIDMappingResponse(StatusResponse):
                  request_id=0, asynchop=True):
         StatusResponse.__init__(self, sec_context, return_addrs, timeslack,
                                 request_id, asynchop)
-        self.signature_check = self.sec\
-            .correctly_signed_name_id_mapping_response
+        self.signature_check = self.sec.correctly_signed_name_id_mapping_response
 
 
 class ManageNameIDResponse(StatusResponse):
@@ -458,8 +455,7 @@ class AuthnResponse(StatusResponse):
                  return_addrs=None, outstanding_queries=None,
                  timeslack=0, asynchop=True, allow_unsolicited=False,
                  test=False, allow_unknown_attributes=False,
-                 want_assertions_signed=False, want_response_signed=False,
-                 **kwargs):
+                 want_assertions_signed=False, want_response_signed=False, **kwargs):
 
         StatusResponse.__init__(self, sec_context, return_addrs, timeslack,
                                 asynchop=asynchop)
@@ -469,7 +465,7 @@ class AuthnResponse(StatusResponse):
             self.outstanding_queries = outstanding_queries
         else:
             self.outstanding_queries = {}
-        self.context = "AuthnReq"
+        self.context = "AuthnReq"        
         self.came_from = ""
         self.ava = None
         self.assertion = None
@@ -497,7 +493,7 @@ class AuthnResponse(StatusResponse):
 
     def loads(self, xmldata, decode=True, origxml=None):
         self._loads(xmldata, decode, origxml)
-
+        
         if self.asynchop:
             if self.in_response_to in self.outstanding_queries:
                 self.came_from = self.outstanding_queries[self.in_response_to]
@@ -514,11 +510,9 @@ class AuthnResponse(StatusResponse):
             elif self.allow_unsolicited:
                 pass
             else:
-                logger.exception(
-                    "Unsolicited response %s" % self.in_response_to)
-                raise UnsolicitedResponse(
-                    "Unsolicited response: %s" % self.in_response_to)
-
+                logger.exception("Unsolicited response %s" % self.in_response_to)
+                raise UnsolicitedResponse("Unsolicited response: %s" % self.in_response_to)
+            
         return self
 
     def clear(self):
@@ -526,7 +520,7 @@ class AuthnResponse(StatusResponse):
         self.came_from = ""
         self.ava = None
         self.assertion = None
-
+        
     def authn_statement_ok(self, optional=False):
         try:
             # the assertion MUST contain one AuthNStatement
@@ -536,7 +530,7 @@ class AuthnResponse(StatusResponse):
                 return True
             else:
                 raise
-
+            
         authn_statement = self.assertion.authn_statement[0]
         if authn_statement.session_not_on_or_after:
             if validate_on_or_after(authn_statement.session_not_on_or_after,
@@ -548,7 +542,7 @@ class AuthnResponse(StatusResponse):
                 return False
         return True
         # check authn_statement.session_index
-
+    
     def condition_ok(self, lax=False):
         if self.test:
             lax = True
@@ -566,8 +560,7 @@ class AuthnResponse(StatusResponse):
 
         # if both are present NotBefore must be earlier than NotOnOrAfter
         if conditions.not_before and conditions.not_on_or_after:
-            if not later_than(conditions.not_on_or_after,
-                              conditions.not_before):
+            if not later_than(conditions.not_on_or_after, conditions.not_before):
                 return False
 
         try:
@@ -583,15 +576,15 @@ class AuthnResponse(StatusResponse):
             else:
                 self.not_on_or_after = 0
 
-        if not for_me(conditions, self.entity_id):
-            if not lax:
-                raise Exception("Not for me!!!")
+        if not self.allow_unsolicited:
+            if not for_me(conditions, self.entity_id):
+                if not lax:
+                    raise Exception("Not for me!!!")
 
-        if conditions.condition:  # extra conditions
+        if conditions.condition: # extra conditions
             for cond in conditions.condition:
                 try:
-                    if cond.extension_attributes[
-                        XSI_TYPE] in self.extension_schema:
+                    if cond.extension_attributes[XSI_TYPE] in self.extension_schema:
                         pass
                     else:
                         raise Exception("Unknown condition")
@@ -608,9 +601,9 @@ class AuthnResponse(StatusResponse):
         :param attribute_statement: A SAML.AttributeStatement which might
             contain both encrypted attributes and attributes.
         """
-        #        _node_name = [
-        #            "urn:oasis:names:tc:SAML:2.0:assertion:EncryptedData",
-        #            "urn:oasis:names:tc:SAML:2.0:assertion:EncryptedAttribute"]
+#        _node_name = [
+#            "urn:oasis:names:tc:SAML:2.0:assertion:EncryptedData",
+#            "urn:oasis:names:tc:SAML:2.0:assertion:EncryptedAttribute"]
 
         for encattr in attribute_statement.encrypted_attribute:
             if not encattr.encrypted_key:
@@ -650,15 +643,16 @@ class AuthnResponse(StatusResponse):
         if data.address:
             if not valid_address(data.address):
                 return False
-                # verify that I got it from the correct sender
+            # verify that I got it from the correct sender
 
         # These two will raise exception if untrue
         validate_on_or_after(data.not_on_or_after, self.timeslack)
         validate_before(data.not_before, self.timeslack)
 
         # not_before must be < not_on_or_after
-        if not later_than(data.not_on_or_after, data.not_before):
-            return False
+        if data.not_before:
+            if not later_than(data.not_on_or_after, data.not_before):
+                return False
 
         if self.asynchop and not self.came_from:
             if data.in_response_to:
@@ -676,8 +670,7 @@ class AuthnResponse(StatusResponse):
                     logger.info("outstanding queries: %s" % (
                         list(self.outstanding_queries.keys()),))
                     raise Exception(
-                        "Combination of session id and requestURI I don't "
-                        "recall")
+                        "Combination of session id and requestURI I don't recall")
         return True
 
     def _holder_of_key_confirmed(self, data):
@@ -714,12 +707,12 @@ class AuthnResponse(StatusResponse):
                     subject_confirmation.method,))
 
             subjconf.append(subject_confirmation)
-
+            
         if not subjconf:
             raise VerificationError("No valid subject confirmation")
-
+            
         subject.subject_confirmation = subjconf
-
+        
         # The subject must contain a name_id
         try:
             assert subject.name_id
@@ -736,19 +729,19 @@ class AuthnResponse(StatusResponse):
 
         logger.info("Subject NameID: %s" % self.name_id)
         return self.name_id
-
+    
     def _assertion(self, assertion):
         self.assertion = assertion
 
         logger.debug("assertion context: %s" % (self.context,))
         logger.debug("assertion keys: %s" % (assertion.keyswv()))
         logger.debug("outstanding_queries: %s" % (self.outstanding_queries,))
-
+        
         #if self.context == "AuthnReq" or self.context == "AttrQuery":
         if self.context == "AuthnReq":
             self.authn_statement_ok()
-        #        elif self.context == "AttrQuery":
-        #            self.authn_statement_ok(True)
+#        elif self.context == "AttrQuery":
+#            self.authn_statement_ok(True)
 
         if not self.condition_ok():
             raise VerificationError("Condition not OK")
@@ -759,7 +752,7 @@ class AuthnResponse(StatusResponse):
             self.ava = self.get_identity()
 
             logger.debug("--- AVA: %s" % (self.ava,))
-
+        
         try:
             self.get_subject()
             if self.asynchop:
@@ -771,7 +764,7 @@ class AuthnResponse(StatusResponse):
         except Exception:
             logger.exception("get subject")
             raise
-
+    
     def _encrypted_assertion(self, xmlstr):
         if xmlstr.encrypted_data:
             assertion_str = self.sec.decrypt(xmlstr.encrypted_data.to_string())
@@ -792,7 +785,7 @@ class AuthnResponse(StatusResponse):
 
         logger.debug("Decrypted Assertion: %s" % assertion)
         return self._assertion(assertion)
-
+    
     def parse_assertion(self):
         if self.context == "AuthnQuery":
             # can contain one or more assertions
@@ -800,10 +793,10 @@ class AuthnResponse(StatusResponse):
         else:  # This is a saml2int limitation
             try:
                 assert len(self.response.assertion) == 1 or \
-                       len(self.response.encrypted_assertion) == 1
+                    len(self.response.encrypted_assertion) == 1
             except AssertionError:
                 raise Exception("No assertion part")
-
+        
         if self.response.assertion:
             logger.debug("***Unencrypted response***")
             for assertion in self.response.assertion:
@@ -820,7 +813,7 @@ class AuthnResponse(StatusResponse):
     def verify(self):
         """ Verify that the assertion is syntactically correct and
         the signature is correct if present."""
-
+        
         try:
             self._verify()
         except AssertionError:
@@ -834,15 +827,15 @@ class AuthnResponse(StatusResponse):
         else:
             logger.error("Could not parse the assertion")
             return None
-
+        
     def session_id(self):
-        """ Returns the SessionID of the response """
+        """ Returns the SessionID of the response """ 
         return self.response.in_response_to
-
+    
     def id(self):
         """ Return the ID of the response """
         return self.response.id
-
+    
     def authn_info(self):
         res = []
         for astat in self.assertion.authn_statement:
@@ -885,7 +878,7 @@ class AuthnResponse(StatusResponse):
             return {"ava": self.ava, "name_id": self.name_id,
                     "came_from": self.came_from, "issuer": self.issuer(),
                     "not_on_or_after": nooa, "authn_info": self.authn_info()}
-
+    
     def __str__(self):
         return "%s" % self.xmlstr
 
@@ -977,15 +970,14 @@ class ArtifactResponse(AuthnResponse):
 
 def response_factory(xmlstr, conf, return_addrs=None, outstanding_queries=None,
                      timeslack=0, decode=True, request_id=0, origxml=None,
-                     asynchop=True, allow_unsolicited=False,
-                     want_assertions_signed=False):
+                     asynchop=True, allow_unsolicited=False, want_assertions_signed=False):
     sec_context = security_context(conf)
     if not timeslack:
         try:
             timeslack = int(conf.accepted_time_diff)
         except TypeError:
             timeslack = 0
-
+            
     attribute_converters = conf.attribute_converters
     entity_id = conf.entityid
     extension_schema = conf.extension_schema
@@ -1010,7 +1002,7 @@ def response_factory(xmlstr, conf, return_addrs=None, outstanding_queries=None,
                                     asynchop=asynchop)
         logoutresp.update(response)
         return logoutresp
-
+        
     return response
 
 

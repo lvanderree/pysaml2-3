@@ -116,7 +116,7 @@ class MetaData(object):
         self.entities_descr = None
         self.entity_descr = None
         self.check_validity = check_validity
-
+        
     def items(self):
         return list(self.entity.items())
 
@@ -433,13 +433,12 @@ class MetaDataLoader(MetaDataFile):
             metadata_loader = getattr(mod, attr)
         except AttributeError:
             raise RuntimeError(
-                'Module "%s" does not define a "%s" metadata loader' %
-                (module, attr))
+                'Module "%s" does not define a "%s" metadata loader' % (
+                    module, attr))
 
         if not isinstance(metadata_loader, collections.Callable):
             raise RuntimeError(
-                'Metadata loader %s.%s must be callable' %
-                (module, attr))
+                'Metadata loader %s.%s must be callable' % (module, attr))
 
         return metadata_loader
 
@@ -689,18 +688,18 @@ class MetadataStore(object):
                                 binding)
 
     def attribute_requirement(self, entity_id, index=0):
-        for _md in list(self.metadata.values()):
+        for _md in iter(self.metadata.values()):
             if entity_id in _md:
                 return _md.attribute_requirement(entity_id, index)
 
     def keys(self):
         res = []
-        for _md in list(self.metadata.values()):
-            res.extend(list(_md.keys()))
+        for _md in iter(self.metadata.values()):
+            res.extend(_md.keys())
         return res
 
     def __getitem__(self, item):
-        for _md in list(self.metadata.values()):
+        for _md in iter(self.metadata.values()):
             try:
                 return _md[item]
             except KeyError:
@@ -713,8 +712,8 @@ class MetadataStore(object):
 
     def entities(self):
         num = 0
-        for _md in list(self.metadata.values()):
-            num += len(list(_md.items()))
+        for _md in iter(self.metadata.values()):
+            num += len(_md.items())
 
         return num
 
@@ -723,14 +722,14 @@ class MetadataStore(object):
 
     def with_descriptor(self, descriptor):
         res = {}
-        for _md in list(self.metadata.values()):
+        for _md in iter(self.metadata.values()):
             res.update(_md.with_descriptor(descriptor))
         return res
 
     def name(self, entity_id, langpref="en"):
-        for md in list(self.metadata.values()):
-            if entity_id in list(md.items()):
-                return name(md[entity_id], langpref)
+        for _md in iter(self.metadata.values()):
+            if entity_id in _md.items():
+                return name(_md[entity_id], langpref)
         return None
 
     def certs(self, entity_id, descriptor, use="signing"):
@@ -811,34 +810,34 @@ class MetadataStore(object):
         return res
 
     def bindings(self, entity_id, typ, service):
-        for _md in list(self.metadata.values()):
-            if entity_id in list(_md.items()):
+        for _md in iter(self.metadata.values()):
+            if entity_id in _md.items():
                 return _md.bindings(entity_id, typ, service)
 
         return None
 
     def __str__(self):
         _str = ["{"]
-        for key, val in list(self.metadata.items()):
+        for key, val in self.metadata.items():
             _str.append("%s: %s" % (key, val))
         _str.append("}")
         return "\n".join(_str)
 
     def construct_source_id(self):
         res = {}
-        for _md in list(self.metadata.values()):
+        for _md in iter(self.metadata.values()):
             res.update(_md.construct_source_id())
         return res
 
     def items(self):
         res = {}
-        for _md in list(self.metadata.values()):
-            res.update(list(_md.items()))
-        return list(res.items())
+        for _md in iter(self.metadata.values()):
+            res.update(_md.items())
+        return res.items()
 
-    def _providers(self, descriptor):
+    def _providers(self):
         res = []
-        for _md in list(self.metadata.values()):
+        for _md in iter(self.metadata.values()):
             for ent_id, ent_desc in list(_md.items()):
                 if "spsso_descriptor" in ent_desc:
                     res.append(ent_id)

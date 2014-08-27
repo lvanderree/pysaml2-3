@@ -18,8 +18,8 @@
 """Contains classes and functions that a SAML2.0 Service Provider (SP) may use
 to conclude its tasks.
 """
-from urllib.parse import urlencode
-from urllib.parse import urlparse
+import threading
+from urllib.parse import urlparse, urlencode, parse_qs
 
 from saml2.entity import Entity
 
@@ -35,8 +35,6 @@ from saml2.samlp import AuthnRequest
 import saml2
 import time
 from saml2.soap import make_soap_enveloped_saml_thingy
-
-from urllib.parse import parse_qs
 
 from saml2.s_utils import signature, UnravelError
 from saml2.s_utils import do_attributes
@@ -106,7 +104,7 @@ class Base(Entity):
         Entity.__init__(self, "sp", config, config_file, virtual_organization)
 
         self.users = Population(identity_cache)
-
+        self.lock = threading.Lock()
         # for server state storage
         if state_cache is None:
             self.state = {}  # in memory storage
@@ -118,15 +116,15 @@ class Base(Entity):
         self.authn_requests_signed = False
         self.want_assertions_signed = False
         self.want_response_signed = False
-        for foo in ["allow_unsolicited", "authn_requests_signed",
+        for attribute in ["allow_unsolicited", "authn_requests_signed",
                     "logout_requests_signed", "want_assertions_signed",
                     "want_response_signed"]:
-            v = self.config.getattr(foo, "sp")
+            v = self.config.getattr(attribute, "sp")
             if v is True or v == 'true':
-                setattr(self, foo, True)
+                setattr(self, attribute, True)
 
         self.artifact2response = {}
-        self.lock = None
+
     #
     # Private methods
     #
@@ -156,7 +154,7 @@ class Base(Entity):
             raise IdpUnspecified("Too many IdPs to choose from: %s" % eids)
 
         try:
-            srvs = self.metadata.single_sign_on_service(list(eids.keys())[0], binding)
+            srvs = self.metadata.single_sign_on_service(next(iter(eids)), binding)
             return destinations(srvs)[0]
         except IndexError:
             raise IdpUnspecified("No IdP to send to given the premises")
@@ -228,7 +226,6 @@ class Base(Entity):
         :param kwargs: Extra key word arguments
         :return: tuple of request ID and <samlp:AuthnRequest> instance
         """
-
         client_crt = None
         if "client_crt" in kwargs:
             client_crt = kwargs["client_crt"]

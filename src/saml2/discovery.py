@@ -1,5 +1,4 @@
-from urllib.parse import urlencode
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlencode, urlparse, parse_qs
 from saml2.entity import Entity
 from saml2.response import VerificationError
 

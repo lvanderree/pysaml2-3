@@ -18,7 +18,7 @@ class Eptid(object):
         try:
             self.secret = secret.encode()
         except AttributeError:
-            self.secret = secret
+        self.secret = secret
         
     def make(self, idp, sp, args):
         md5 = hashlib.md5()
@@ -32,13 +32,13 @@ class Eptid(object):
 
     def __getitem__(self, key):
         try:
-            return self._db[key]
+        return self._db[key]
         except AttributeError:
             return self._db[key.decode()]
 
     def __setitem__(self, key, value):
         try:
-            self._db[key] = value
+        self._db[key] = value
         except AttributeError:
             self._db[key.decode()] = value
 

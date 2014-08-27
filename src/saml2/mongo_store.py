@@ -155,7 +155,8 @@ class IdentMDB(IdentDB):
         self.mdb.store(ident, name_id=to_dict(name_id, list(ONTS.values()), True))
 
     def find_nameid(self, userid, nformat=None, sp_name_qualifier=None,
-                    name_qualifier=None, sp_provided_id=None, **nvargs):
+                    name_qualifier=None, sp_provided_id=None, **kwargs):
+        # reset passed for compatibility kwargs for next usage
         kwargs = {}
         if nformat:
             kwargs["name_format"] = nformat

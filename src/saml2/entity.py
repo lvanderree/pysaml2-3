@@ -313,8 +313,7 @@ class Entity(HTTPBase):
                 elif binding == BINDING_HTTP_POST:
                     xmlstr = base64.b64decode(txt)
                 elif binding == BINDING_SOAP:
-                    func = getattr(soap,
-                                   "parse_soap_enveloped_saml_%s" % msgtype)
+                    func = getattr(soap, "parse_soap_enveloped_saml_%s" % msgtype)
                     xmlstr = func(txt)
                 elif binding == BINDING_HTTP_ARTIFACT:
                     xmlstr = base64.b64decode(txt)
@@ -343,7 +342,7 @@ class Entity(HTTPBase):
         """
         return open_soap_envelope(text)
 
-    # --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
     def sign(self, msg, mid=None, to_sign=None, sign_prepare=False):
         if msg.signature is None:
@@ -443,8 +442,7 @@ class Entity(HTTPBase):
                 msg.extension_elements = extensions
 
     def _response(self, in_response_to, consumer_url=None, status=None,
-                  issuer=None, sign=False, to_sign=None,
-                  encrypt_assertion=False, encrypt_cert=None, **kwargs):
+                  issuer=None, sign=False, to_sign=None, encrypt_assertion=False, encrypt_cert=None, **kwargs):
         """ Create a Response.
 
         :param in_response_to: The session identifier of the request
@@ -477,13 +475,10 @@ class Entity(HTTPBase):
         if encrypt_assertion:
             sign_class = [(class_name(response), response.id)]
             if sign:
-                response.signature = pre_signature_part(response.id,
-                                                        self.sec.my_cert, 1)
+                response.signature = pre_signature_part(response.id, self.sec.my_cert, 1)
             cbxs = CryptoBackendXmlSec1(self.config.xmlsec_binary)
             _, cert_file = make_temp("%s" % encrypt_cert, decode=False)
-            response = cbxs.encrypt_assertion(response, cert_file,
-                                              pre_encryption_part())
-                                              #template(response.assertion.id))
+            response = cbxs.encrypt_assertion(response, cert_file, pre_encryption_part())#template(response.assertion.id))
             if sign:
                 return signed_instance_factory(response, self.sec, sign_class)
             else:
@@ -535,7 +530,7 @@ class Entity(HTTPBase):
                 if typ == "aa":
                     return "attribute_authority"
                 elif typ == "aq":
-                    return "authn_authority"
+                    return  "authn_authority"
                 else:
                     return typ
 
@@ -616,7 +611,7 @@ class Entity(HTTPBase):
 
     def create_logout_request(self, destination, issuer_entity_id,
                               subject_id=None, name_id=None,
-                              reason=None, expire=None, message_id=0,
+                              reason=None, expire=None, message_id=0, 
                               consent=None, extensions=None, sign=False):
         """ Constructs a LogoutRequest
 
@@ -717,7 +712,7 @@ class Entity(HTTPBase):
 
         return response
 
-    def create_manage_name_id_request(self, destination, message_id=0,
+    def create_manage_name_id_request(self, destination, message_id=0, 
                                       consent=None, extensions=None, sign=False,
                                       name_id=None, new_id=None,
                                       encrypted_id=None, new_encrypted_id=None,
@@ -786,15 +781,14 @@ class Entity(HTTPBase):
 
         return response
 
-    def parse_manage_name_id_request_response(self, string,
+    def parse_manage_name_id_request_response(self, string, 
                                               binding=BINDING_SOAP):
         return self._parse_response(string, response.ManageNameIDResponse,
                                     "manage_name_id_service", binding)
 
     # ------------------------------------------------------------------------
 
-    def _parse_response(self, xmlstr, response_cls, service, binding,
-                        outstanding_certs=None, **kwargs):
+    def _parse_response(self, xmlstr, response_cls, service, binding, outstanding_certs=None, **kwargs):
         """ Deal with a Response
 
         :param xmlstr: The response as a xml string
@@ -838,10 +832,7 @@ class Entity(HTTPBase):
             if outstanding_certs is not None:
                 _response = samlp.any_response_from_string(xmlstr)
                 if len(_response.encrypted_assertion) > 0:
-                    _, cert_file = make_temp(
-                        "%s" % outstanding_certs[_response.in_response_to][
-                            "key"],
-                        decode=False)
+                    _, cert_file = make_temp("%s" % outstanding_certs[_response.in_response_to]["key"], decode=False)
                     cbxs = CryptoBackendXmlSec1(self.config.xmlsec_binary)
                     xmlstr = cbxs.decrypt(xmlstr, cert_file)
 
@@ -864,14 +855,11 @@ class Entity(HTTPBase):
             logger.debug("XMLSTR: %s" % xmlstr)
 
             if hasattr(response.response, 'encrypted_assertion'):
-                for encrypted_assertion in response.response\
-                        .encrypted_assertion:
+                for encrypted_assertion in response.response.encrypted_assertion:
                     if encrypted_assertion.extension_elements is not None:
-                        assertion_list = extension_elements_to_elements(
-                            encrypted_assertion.extension_elements, [saml])
+                        assertion_list = extension_elements_to_elements(encrypted_assertion.extension_elements, [saml])
                         for assertion in assertion_list:
-                            _assertion = saml.assertion_from_string(
-                                str(assertion))
+                            _assertion = saml.assertion_from_string(str(assertion))
                             response.response.assertion.append(_assertion)
 
             if response:
@@ -880,7 +868,7 @@ class Entity(HTTPBase):
             if not response:
                 return None
 
-                #logger.debug(response)
+            #logger.debug(response)
 
         return response
 

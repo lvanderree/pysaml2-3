@@ -19,6 +19,7 @@ class Population(object):
         this function will overwrite that information"""
         
         name_id = session_info["name_id"]
+        session_info["name_id"] = name_id.text.strip()
         issuer = session_info["issuer"]
         del session_info["issuer"]
         self.cache.set(name_id, issuer, session_info,

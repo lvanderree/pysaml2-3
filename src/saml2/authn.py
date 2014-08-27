@@ -1,9 +1,7 @@
 import logging
-from urllib.parse import urlencode
-from urllib.parse import parse_qs
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, parse_qs, urlsplit
 import time
-import ldap
+import ldap3 as ldap
 from saml2 import SAMLError
 from saml2.aes import AESCipher
 from saml2.httputil import Response

@@ -4,8 +4,7 @@ import logging
 import time
 import cgi
 
-from urllib.parse import quote
-from urllib.parse import parse_qs
+from urllib.parse import quote, parse_qs
 from http.cookies import SimpleCookie
 
 from saml2 import BINDING_HTTP_ARTIFACT, SAMLError

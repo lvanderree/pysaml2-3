@@ -3,8 +3,7 @@ import shelve
 import logging
 
 from hashlib import sha256
-from urllib.parse import quote
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 from saml2 import SAMLError
 from saml2.s_utils import rndbytes
 from saml2.s_utils import PolicyError

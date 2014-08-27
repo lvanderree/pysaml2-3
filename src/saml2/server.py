@@ -22,9 +22,9 @@ import logging
 import os
 
 import shelve
+import threading
 
 from saml2.eptid import EptidShelve, Eptid
-from saml2.saml import EncryptedAssertion
 from saml2.sdb import SessionStorage
 from saml2.schema import soapenv
 
@@ -42,12 +42,9 @@ from saml2.request import NameIDMappingRequest
 from saml2.request import AuthzDecisionQuery
 from saml2.request import AuthnQuery
 
-from saml2.s_utils import MissingValue
-from saml2.s_utils import Unknown
-from saml2.s_utils import rndbytes
+from saml2.s_utils import MissingValue, Unknown, rndstr
 
-from saml2.sigver import pre_signature_part, CertificateError
-from saml2.sigver import signed_instance_factory
+from saml2.sigver import pre_signature_part, signed_instance_factory, CertificateError
 
 from saml2.assertion import Assertion
 from saml2.assertion import Policy
@@ -84,6 +81,12 @@ class Server(Entity):
         self.symkey = symkey
         self.seed = rndbytes()
         self.iv = os.urandom(16)
+        self.lock = threading.Lock()
+
+    def getvalid_certificate_str(self):
+        if self.sec.cert_handler is not None:
+            return self.sec.cert_handler._last_validated_cert
+        return None
 
     def support_AssertionIDRequest(self):
         return True
@@ -330,7 +333,7 @@ class Server(Entity):
                                       self.config.attribute_converters,
                                       policy, issuer=_issuer)
 
-        if sign_assertion:
+        if sign_assertion is not None and sign_assertion:
             assertion.signature = pre_signature_part(assertion.id,
                                                      self.sec.my_cert, 1)
             # Just the assertion or the response and the assertion ?
@@ -517,19 +520,21 @@ class Server(Entity):
 
         try:
             _authn = authn
-            return self._authn_response(in_response_to,  # in_response_to
-                                        destination,  # consumer_url
-                                        sp_entity_id,  # sp_entity_id
-                                        identity,  # identity as dictionary
-                                        name_id,
-                                        authn=_authn,
-                                        issuer=issuer,
-                                        policy=policy,
-                                        sign_assertion=sign_assertion,
-                                        sign_response=sign_response,
-                                        best_effort=best_effort,
-                                        encrypt_assertion=encrypt_assertion,
-                                        encrypt_cert=encrypt_cert)
+            with self.lock:
+                self.sec.cert_handler.update_cert(True)
+                return self._authn_response(in_response_to,  # in_response_to
+                                            destination,  # consumer_url
+                                            sp_entity_id,  # sp_entity_id
+                                            identity,  # identity as dictionary
+                                            name_id,
+                                            authn=_authn,
+                                            issuer=issuer,
+                                            policy=policy,
+                                            sign_assertion=sign_assertion,
+                                            sign_response=sign_response,
+                                            best_effort=best_effort,
+                                            encrypt_assertion=encrypt_assertion,
+                                            encrypt_cert=encrypt_cert)
 
         except MissingValue as exc:
             return self.create_error_response(in_response_to, destination,

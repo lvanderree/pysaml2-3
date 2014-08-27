@@ -362,7 +362,7 @@ class Policy(object):
         logger.debug("policy restrictions: %s" % self._restrictions)
 
         return self._restrictions
-    
+
     def get(self, attribute, sp_entity_id, default=None, post_func=None,
             **kwargs):
         """
@@ -401,14 +401,14 @@ class Policy(object):
         """
         return self.get("nameid_format", sp_entity_id,
                         saml.NAMEID_FORMAT_TRANSIENT)
-    
+
     def get_name_form(self, sp_entity_id):
         """ Get the NameFormat to used for the entity id 
         :param: The SP entity ID
         :retur: The format
         """
         return self.get("name_format", sp_entity_id, NAME_FORMAT_URI)
-    
+
     def get_lifetime(self, sp_entity_id):
         """ The lifetime of the assertion 
         :param sp_entity_id: The SP entity ID
@@ -416,14 +416,14 @@ class Policy(object):
         """
         # default is a hour
         return self.get("lifetime", sp_entity_id, {"hours": 1})
-    
+
     def get_attribute_restriction(self, sp_entity_id):
         """ Return the attribute restriction for SP that want the information
         
         :param sp_entity_id: The SP entity ID
         :return: The restrictions
         """
-        
+
         return self.get("attribute_restrictions", sp_entity_id)
 
     def entity_category_attributes(self, ec):

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import saml2
 from saml2 import SamlBase
 from xmldsig import X509Data
@@ -61,3 +63,4 @@ ELEMENT_BY_TAG = {
 
 def factory(tag, **kwargs):
     return ELEMENT_BY_TAG[tag](**kwargs)
+

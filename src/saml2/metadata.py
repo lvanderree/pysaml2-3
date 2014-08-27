@@ -43,6 +43,7 @@ DEFAULTS = {
     "want_assertions_signed": "true",
     "authn_requests_signed": "false",
     "want_authn_requests_signed": "true",
+    "want_authn_requests_only_with_valid_cert": "false",
 }
 
 ORG_ATTR_TRANSL = {
@@ -205,7 +206,7 @@ def do_key_descriptor(cert, use="both"):
             )
         ]
     elif use in ["signing", "encryption"]:
-        md.KeyDescriptor(
+        return md.KeyDescriptor(
             key_info=ds.KeyInfo(
                 x509_data=ds.X509Data(
                     x509_certificate=ds.X509Certificate(text=cert)
@@ -430,6 +431,7 @@ DEFAULT = {
     "want_assertions_signed": "true",
     "authn_requests_signed": "false",
     "want_authn_requests_signed": "false",
+    "want_authn_requests_only_with_valid_cert": "false",
 }
 
 
@@ -463,7 +465,8 @@ def do_spsso_descriptor(conf, cert=None):
                 spsso.extensions.add_extension_element(val)
 
     if cert:
-        spsso.key_descriptor = do_key_descriptor(cert, "both")
+        encryption_type = conf.encryption_type
+        spsso.key_descriptor = do_key_descriptor(cert, encryption_type)
 
     for key in ["want_assertions_signed", "authn_requests_signed"]:
         try:
@@ -555,6 +558,16 @@ def do_idpsso_descriptor(conf, cert=None):
             val = conf.getattr(key, "idp")
             if val is None:
                 setattr(idpsso, key, DEFAULT["want_authn_requests_signed"])
+            else:
+                setattr(idpsso, key, "%s" % val)
+        except KeyError:
+            setattr(idpsso, key, DEFAULTS[key])
+
+    for key in ["want_authn_requests_only_with_valid_cert"]:
+        try:
+            val = conf.getattr(key, "idp")
+            if val is None:
+                setattr(idpsso, key, DEFAULT["want_authn_requests_only_with_valid_cert"])
             else:
                 setattr(idpsso, key, "%s" % val)
         except KeyError:

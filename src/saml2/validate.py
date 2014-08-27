@@ -1,7 +1,7 @@
 import calendar
-import urllib.parse
+from urllib import parse
 import re
-from . import time_util
+from saml2 import time_util
 import struct
 import base64
 
@@ -46,7 +46,7 @@ def valid_id(oid):
 def valid_any_uri(item):
     """very simplistic, ..."""
     try:
-        part = urllib.parse.urlparse(item)
+        part = parse.urlparse(item)
     except Exception:
         raise NotValid("AnyURI")
 
@@ -68,7 +68,7 @@ def valid_date_time(item):
 
 def valid_url(url):
     try:
-        _ = urllib.parse.urlparse(url)
+        _ = parse.urlparse(url)
     except Exception:
         raise NotValid("URL")
         
@@ -260,7 +260,7 @@ def valid_anytype(val):
     :return: True if value is valid otherwise an exception is raised
     """
     for validator in list(VALIDATOR.values()):
-        if validator == valid_anytype:  # recursion
+        if validator == valid_anytype:  # To hinder recursion
             continue
         try:
             if validator(val):

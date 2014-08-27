@@ -226,7 +226,7 @@ class Client(Entity):
             # url I started off with.
             pass
         else:
-            print((response.error))
+            print(response.error)
             raise SAMLError(
                 "Error POSTing package to SP: %s" % response.error)
 
